@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализатор особых точек</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+            margin: 15px 0;
+        }
+        .result {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .plot {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .plot img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Анализатор особых точек дифференциальных уравнений</h1>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="f_expr">dx/dt = f(x,y):</label>
+            <input type="text" id="f_expr" name="f_expr" value="{{ f_expr if f_expr else 'x*(1 - x) - x*y' }}" placeholder="Например: x*(1 - x) - x*y">
+        </div>
+
+        <div class="form-group">
+            <label for="g_expr">dy/dt = g(x,y):</label>
+            <input type="text" id="g_expr" name="g_expr" value="{{ g_expr if g_expr else 'y*(x - y)' }}" placeholder="Например: y*(x - y)">
+        </div>
+
+        <button type="submit">Анализировать</button>
+    </form>
+
+    {% if error %}
+        <div class="error">
+            <h3>Ошибка:</h3>
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+
+    {% if results %}
+        <div class="result">
+            <h2>Результаты анализа:</h2>
+
+            {% for res in results %}
+                <h3>Особая точка {{ loop.index }}: ({{ "%.2f"|format(res.point[0]) }}, {{ "%.2f"|format(res.point[1]) }})</h3>
+                <p><strong>Тип:</strong> {{ res.type }}</p>
+
+                <h4>Матрица Якоби:</h4>
+                <table>
+                    <tr>
+                        <td>{{ "%.2f"|format(res.jacobian[0][0]) }}</td>
+                        <td>{{ "%.2f"|format(res.jacobian[0][1]) }}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ "%.2f"|format(res.jacobian[1][0]) }}</td>
+                        <td>{{ "%.2f"|format(res.jacobian[1][1]) }}</td>
+                    </tr>
+                </table>
+
+                <h4>Собственные значения:</h4>
+                <ul>
+                    {% for val in res.eigenvalues %}
+                        <li>{{ "%.2f"|format(val.real) }}{% if val.imag != 0 %}{{ "%+.2f"|format(val.imag) }}i{% endif %}</li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+
+            {% if plot_data %}
+                <div class="plot">
+                    <h3>Фазовый портрет:</h3>
+                    <img src="data:image/png;base64,{{ plot_data }}" alt="Фазовый портрет">
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div style="margin-top: 30px; font-size: 0.9em; color: #666;">
+        <h3>Примеры для ввода:</h3>
+        <ul>
+            <li>Модель Лотки-Вольтерра: f(x,y) = x*(1 - y), g(x,y) = y*(x - 1)</li>
+            <li>Устойчивый узел: f(x,y) = -x, g(x,y) = -2*y</li>
+            <li>Седло: f(x,y) = x + y, g(x,y) = x - y</li>
+            <li>Центр: f(x,y) = y, g(x,y) = -x</li>
+        </ul>
+    </div>
+</body>
+</html>
